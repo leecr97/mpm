@@ -18,6 +18,8 @@
 #include <QSound>
 
 #include "samplers/poissonsampler.h"
+#include "scene/particlegrid.h"
+
 #include <QStringRef>
 #include <QFile>
 
@@ -25,6 +27,8 @@
 #include <QOpenGLShaderProgram>
 
 class PoissonSampler;
+class Particle;
+class ParticleGrid;
 
 class MyGL
     : public GLWidget277
@@ -52,6 +56,8 @@ private:
 
     PoissonSampler* poissonSampler;
     Mesh* poissonMesh;
+    std::vector<Particle*> particles;
+    ParticleGrid* pgrid;
 
 public:
     explicit MyGL(QWidget *parent = 0);

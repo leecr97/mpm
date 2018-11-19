@@ -83,6 +83,8 @@ void PoissonSampler::fallWithGravity() {
         if (p->pos.y >= -2) {
 //            std::cout << "y: " << p->pos.y << std::endl;
             p->pos.y = p->pos.y - 0.2f;
+            // force of gravity * dt
+//            -2.f * p->mp;
             create();
         }
     }
@@ -231,4 +233,10 @@ glm::vec3 PoissonSampler::posToGridLoc(glm::vec3 p) {
 bool PoissonSampler::validWithinBounds(glm::vec3 p) {
         return (p.x > bounds->min[0] && p.y > bounds->min[1] && p.z > bounds->min[2]
                 && p.x < bounds->max[0] && p.y < bounds->max[1] && p.z < bounds->max[2]);
+}
+
+void Particle::updateDeformationGrad(glm::mat3 newDG) {
+    // assume all new deformation was elastic
+    glm::mat3 newElas = newDG * glm::inverse(plasticity);
+
 }

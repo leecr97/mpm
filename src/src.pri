@@ -22,7 +22,8 @@ SOURCES += \
     $$PWD/scene/bounds.cpp \
     $$PWD/samplers/poissonsampler.cpp \
     $$PWD/samplers/poissonbvh.cpp \
-    $$PWD/raytracing/film.cpp
+    $$PWD/raytracing/film.cpp \
+    $$PWD/scene/particlegrid.cpp
 
 HEADERS += \
     $$PWD/mainwindow.h \
@@ -45,4 +46,5 @@ HEADERS += \
     $$PWD/warpfunctions.h \
     $$PWD/samplers/poissonsampler.h \
     $$PWD/samplers/poissonbvh.h \
-    $$PWD/raytracing/film.h
+    $$PWD/raytracing/film.h \
+    $$PWD/scene/particlegrid.h

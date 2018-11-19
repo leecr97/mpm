@@ -27,6 +27,7 @@ MyGL::MyGL(QWidget *parent)
     : GLWidget277(parent),
       gl_camera(),
       poissonSampler(nullptr), poissonMesh(nullptr),
+      particles(), pgrid(nullptr),
       completeSFX(":/include/complete.wav"),
       gravity(false)
 
@@ -149,6 +150,7 @@ void MyGL::poissonSamples() {
 
         poissonSampler = new PoissonSampler(*poissonMesh, scene, threeDim);
         poissonSampler->create();
+        particles = poissonSampler->finalSamples;
         std::cout<<"numSamples:"<<poissonSampler->numPoints<<std::endl;
     }
 
@@ -169,13 +171,17 @@ void MyGL::timerUpdate()
 
 void MyGL::gridForces() {
     // TODO - particle to grid
+    pgrid = new ParticleGrid(poissonSampler);
+    pgrid->p2gTransfer();
 
     // TODO - force updates:
     // stress update, gravity update, position update, etc. check paper for ordering of this
-    poissonSampler->fallWithGravity();
+//    poissonSampler->fallWithGravity();
+    pgrid->applyForces();
 
     // TODO - grid to particle
-
+    pgrid->g2pTransfer();
+    pgrid->particleAdvection();
 }
 
 void MyGL::keyPressEvent(QKeyEvent *e)
