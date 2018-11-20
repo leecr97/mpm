@@ -57,7 +57,10 @@ void ParticleGrid::applyForces() {
 
         // velocity update
         float dt = 1.f;
-        gridVelocities[i] = gridVelocities[i] + dt * (gridForces[i] / gridMasses[i]);
+        if (gridMasses[i] != 0) {
+            gridVelocities[i] = gridVelocities[i] + dt * (gridForces[i] / gridMasses[i]);
+        }
+        gridVelocities[i] += glm::vec3(0, -9.8, 0);
 
         // update deformation gradient
 //        p->deform = (glm::mat3(1.f) + dt * glm::dot(gridVelocities[i], dwip)) * p->deform;

@@ -323,17 +323,19 @@ void Particle::updateDeformationGrad(glm::mat3 newDG) {
         for (int j = 0; j < 3; j++) {
             realU[i][j] = eigen_U(i, j);
 
-            if (eigen_S(i, j) < 1 - thetaC) {
-                realS[i][j] = 1 - thetaC;
-            }
-            else if (eigen_S(i, j) > 1 + thetaS) {
-                realS[i][j] = 1 + thetaS;
-            }
-            else {
-                realS[i][j] = eigen_S(i, j);
-            }
-
             realV[i][j] = eigen_V(i, j);
+        }
+    }
+
+    for (int i = 0; i < 3; i++) {
+        if (eigen_S[i] < 1 - thetaC) {
+            realS[i][i] = 1 - thetaC;
+        }
+        else if (eigen_S[i] > 1 + thetaS) {
+            realS[i][i] = 1 + thetaS;
+        }
+        else {
+            realS[i][i] = eigen_S[i];
         }
     }
 

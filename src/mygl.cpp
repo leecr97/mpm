@@ -164,7 +164,8 @@ void MyGL::timerUpdate()
     // Use it to perform any repeated actions you want to do,
 
     timeCount++;
-    if ((timeCount % 100 == 0) && gravity) {
+
+    if (gravity) {
         gridForces();
     }
     this->update();

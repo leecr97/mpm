@@ -76,7 +76,7 @@
           <item row="1" column="1">
            <widget class="QCheckBox" name="gravity">
             <property name="text">
-             <string>Gravity</string>
+             <string>Simulate</string>
             </property>
            </widget>
           </item>
