@@ -152,6 +152,7 @@ void MyGL::poissonSamples() {
         poissonSampler->create();
         particles = poissonSampler->finalSamples;
         std::cout<<"numSamples:"<<poissonSampler->numPoints<<std::endl;
+        pgrid = new ParticleGrid(poissonSampler);
     }
 
     this->update();
@@ -170,16 +171,18 @@ void MyGL::timerUpdate()
 }
 
 void MyGL::gridForces() {
-    // TODO - particle to grid
-    pgrid = new ParticleGrid(poissonSampler);
+    // particle to grid
     pgrid->p2gTransfer();
 
     // TODO - force updates:
     // stress update, gravity update, position update, etc. check paper for ordering of this
 //    poissonSampler->fallWithGravity();
-    pgrid->applyForces();
 
-    // TODO - grid to particle
+   // pgrid->computeForces();
+    pgrid->applyForces();
+    //pgrid->collisionCheck();
+
+    // grid to particle
     pgrid->g2pTransfer();
     pgrid->particleAdvection();
 }

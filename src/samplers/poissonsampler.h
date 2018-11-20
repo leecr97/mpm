@@ -10,6 +10,9 @@
 #include "poissonbvh.h"
 #include "openGL/drawable.h"
 
+typedef Eigen::Matrix<float, 3, 3> EigenMat3;
+typedef Eigen::Vector3d EigenVec3;
+
 class Particle;
 
 class PoissonSampler : public Drawable
@@ -93,7 +96,9 @@ class Particle {
         // stress (piola-kirchoff or cauchy idk)
         glm::mat3 stress;
 
+        void updateDeformationGradients();
         void updateDeformationGrad(glm::mat3 newDG);
+
         glm::mat3 deformationGrad() {
             return (elasticity * plasticity);
         }

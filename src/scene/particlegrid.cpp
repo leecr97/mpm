@@ -51,8 +51,9 @@ void ParticleGrid::applyForces() {
         Particle* p = sampler->finalSamples[i];
         glm::vec3 dwip = computeWeightGrad(p->pos, p->gridLoc);
 
+        glm::mat3 oldDG = p->deformationGrad();
         // force is value or vector?
-        gridForces[i] = -1.f * p->vol * p->stress * glm::transpose(p->deformation) * dwip;
+        gridForces[i] = -1.f * p->vol * p->stress * glm::transpose(oldDG) * dwip;
 
         // velocity update
         float dt = 1.f;
@@ -60,7 +61,6 @@ void ParticleGrid::applyForces() {
 
         // update deformation gradient
 //        p->deform = (glm::mat3(1.f) + dt * glm::dot(gridVelocities[i], dwip)) * p->deform;
-        glm::mat3 oldDG = p->deformationGrad();
         glm::mat3 newDG = oldDG + oldDG * (dt * glm::dot(gridVelocities[i], dwip));
         p->updateDeformationGrad(newDG);
     }

@@ -11,7 +11,6 @@
 #include <openGL/shaderprogram.h>
 #include <scene/camera.h>
 #include <scene/scene.h>
-#include <la.h>
 
 #include <QTimer>
 #include <QTime>

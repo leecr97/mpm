@@ -239,4 +239,106 @@ void Particle::updateDeformationGrad(glm::mat3 newDG) {
     // assume all new deformation was elastic
     glm::mat3 newElas = newDG * glm::inverse(plasticity);
 
+    // opengl:mat3 and eigen:mat3 are column major so no need to complicate conversions
+    // copy over to eigen for svd calculation
+    EigenMat3 eigen_newElas = EigenMat3();
+    EigenMat3 eigen_newPlas = EigenMat3();
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            eigen_newElas(i, j) = newElas[i][j];
+            eigen_newPlas(i, j) = plasticity[i][j];
+        }
+    }
+
+    // find svd of elas
+    Eigen::JacobiSVD<EigenMat3> eigen_SVD(eigen_newElas, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    EigenMat3 eigen_U = eigen_SVD.matrixU();
+    auto eigen_S = eigen_SVD.singularValues();
+    EigenMat3 eigen_V = eigen_SVD.matrixV();
+
+    // define the small constants thetaC and thetaS for clamping
+    float thetaC = 0.25f;
+    float thetaS = 0.075f;
+
+    // swap u and v columns to make diagonals appropriately for clamping and SVD
+    //auto size = eigen_S.rows() * eigen_S.cols();
+    auto size = 3 * 1;
+    for (int i = 1; i < size; ++i) {
+        for (int j = i; j > 0; --j) {
+            if (eigen_S[j - 1] < eigen_S[j]) { continue; }
+
+            // swapping
+            std::swap(eigen_S[j], eigen_S[j - 1]);
+            for (int k = 0; k < 3; ++k) {
+                // swap row j with row j - 1
+                std::swap(eigen_U(k, j), eigen_U(k, j - 1));
+                std::swap(eigen_V(k, j), eigen_V(k, j - 1));
+            }
+        }
+    }
+    // if determinant is -1 flip the sign of col3 of u or v and sigma
+    if (eigen_U.determinant() < 0) {
+        // multiply U's last column by -1
+        eigen_U.col(2) *= -1.0;
+        // multiply sigma's last row first entry by -1
+        eigen_S[2] *= -1.0;
+    }
+    if (eigen_V.determinant() < 0) {
+        // multiply V's last column by -1
+        eigen_V.col(2) *= -1.0;
+        // multiply sigma's last row first entry by -1
+        eigen_S[2] *= -1.0;
+    }
+    // check have valid determinants
+    if (!(eigen_U.determinant() > 0 && eigen_V.determinant() > 0)) {
+        std::cout<<"determinants of u and v in svd decomp "
+                 <<"were invalid (non inversible matrices)."<<std::endl;
+        throw;
+    }
+    // clamping based on 1 - thetaC and 1 + thetaS values -- done in conversion to glm
+//    for (int i = 0; i < 3; i++) {
+//        eigen_S[i] = std::clamp(eigen_S[i], 1 - thetaC, 1 + thetaS);
+//    }
+    // todo - maybe ? add in an additional check here to see if the reverse of the decomposition
+    // brings back the original inputted deformation gradient
+
+    // yogurt values?
+    float mu = 0.2f;
+    float lambda = 0.3f;
+
+    EigenMat3 Fe = eigen_newElas;
+    EigenMat3 Fp = eigen_newPlas;
+
+    // calculate stress
+    EigenMat3 R = eigen_U * eigen_V.transpose();
+    float j_elastic = Fe.determinant();
+    float j_plastic = Fp.determinant();
+    auto stress_corrotated = 2.0 * mu * (Fe - R) + lambda * (j_elastic - 1.0) * Fe.inverse().transpose();
+    auto stress_piola_kirchoff = 2.0 * mu * (Fe - R) + lambda * j_elastic * (j_elastic - 1.0) * Fe.inverse().transpose();
+
+    // convert from eigen to glm (and clamp S)
+    glm::mat3 realU; glm::mat3 realS; glm::mat3 realV;
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            realU[i][j] = eigen_U(i, j);
+
+            if (eigen_S(i, j) < 1 - thetaC) {
+                realS[i][j] = 1 - thetaC;
+            }
+            else if (eigen_S(i, j) > 1 + thetaS) {
+                realS[i][j] = 1 + thetaS;
+            }
+            else {
+                realS[i][j] = eigen_S(i, j);
+            }
+
+            realV[i][j] = eigen_V(i, j);
+        }
+    }
+
+    elasticity = realU * realS * realV;
+
+    // find plasticity from this elasticity and newDG
+    plasticity = glm::inverse(elasticity) * newDG;
 }
