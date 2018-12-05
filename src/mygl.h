@@ -51,7 +51,7 @@ private:
     QString output_filepath;
 
     QSound completeSFX;
-    bool gravity;
+    bool simulate;
 
     PoissonSampler* poissonSampler;
     Mesh* poissonMesh;
@@ -69,7 +69,7 @@ public:
 
     void loadObj();
     void poissonSamples();
-    void gridForces();
+    void simulateMPM();
 
 protected:
     void keyPressEvent(QKeyEvent *e);
@@ -80,7 +80,7 @@ private slots:
 
 public slots:
     void slot_loadPoissonObj();
-    void slot_gravityActivated(bool b);
+    void slot_simulate();
     void slot_reset();
 
 signals:

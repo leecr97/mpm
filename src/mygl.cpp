@@ -29,7 +29,7 @@ MyGL::MyGL(QWidget *parent)
       poissonSampler(nullptr), poissonMesh(nullptr),
       particles(), pgrid(nullptr),
       completeSFX(":/include/complete.wav"),
-      gravity(false)
+      simulate(false)
 
 {
     // Connect the timer to a function so that when the timer ticks the function is executed
@@ -146,9 +146,7 @@ void MyGL::loadObj() {
 
 void MyGL::poissonSamples() {
     if (this->poissonMesh != nullptr) {
-        bool threeDim = true;
-
-        poissonSampler = new PoissonSampler(*poissonMesh, scene, threeDim);
+        poissonSampler = new PoissonSampler(*poissonMesh, scene);
         poissonSampler->create();
         particles = poissonSampler->finalSamples;
         std::cout<<"numSamples:"<<poissonSampler->numPoints<<std::endl;
@@ -165,27 +163,15 @@ void MyGL::timerUpdate()
 
     timeCount++;
 
-    if (gravity) {
-        gridForces();
+    if (simulate) {
+        simulateMPM();
     }
     this->update();
 }
 
-void MyGL::gridForces() {
-    // particle to grid
-    pgrid->p2gTransfer();
-
-    // TODO - force updates:
-    // stress update, gravity update, position update, etc. check paper for ordering of this
-//    poissonSampler->fallWithGravity();
-
-   // pgrid->computeForces();
-    pgrid->applyForces();
-    //pgrid->collisionCheck();
-
-    // grid to particle
-    pgrid->g2pTransfer();
-    pgrid->particleAdvection();
+void MyGL::simulateMPM() {
+    pgrid->MPM();
+    poissonSampler->create();
 }
 
 void MyGL::keyPressEvent(QKeyEvent *e)
@@ -262,7 +248,7 @@ void MyGL::slot_loadPoissonObj() {
     QStringRef local_path = filepath.leftRef(i+1);
     QStringRef file_name = filepath.rightRef(filepath.length() - 1 - (i));
 
-    Transform t = Transform(glm::vec3(0), glm::vec3(0), glm::vec3(2.5));
+    Transform t = Transform(glm::vec3(0), glm::vec3(0), glm::vec3(5.5));
     poissonMesh = new Mesh();
     if (poissonSampler != nullptr) { poissonSampler = nullptr; }
     poissonMesh->LoadOBJ(file_name, local_path, t);
@@ -274,14 +260,14 @@ void MyGL::slot_loadPoissonObj() {
     this->update();
 }
 
-void MyGL::slot_gravityActivated(bool b) {
-    gravity = b;
-//    std::cout << "GRAVITY TIME BOI " << gravity << std::endl;
+void MyGL::slot_simulate() {
+    simulate = true;
     this->update();
 }
 
 void MyGL::slot_reset() {
-    gravity = false;
-    poissonSampler->resetParticlePositions();
+    simulate = false;
+    poissonSampler->reset();
+    pgrid->reset();
     this->update();
 }

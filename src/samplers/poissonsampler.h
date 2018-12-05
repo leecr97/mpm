@@ -19,7 +19,7 @@ class PoissonSampler : public Drawable
 {
 public:
     //assuming only inputting primitives in scene that ALL need to be filled
-    PoissonSampler(Mesh& mesh, Scene& scene, bool isThreeDim);
+    PoissonSampler(Mesh& mesh, Scene& scene);
     ~PoissonSampler() { finalSamples.clear(); delete bvh; delete bounds;}
 
     // all variables below are initialized in the constructor's list
@@ -27,7 +27,8 @@ public:
     Scene s;
 
     // extent of the sample domain in Rn is 2d or 3d
-    bool threeDim;
+//    bool threeDim;
+    int nDim = 3;
     // bounds of the mesh
     Bounds3f* bounds;
     // dimensions of the grid (# of voxels)
@@ -36,9 +37,10 @@ public:
     float cellSize;
     PoissonBVH* bvh;
     // minimum distance between samples
-    float radius = 0.2f;
+//    float radius = 0.4f;
+    float radius = 0.3f * sqrt(3.0f);
     // limit of samples to choose before rejection in the algorithm
-    int K;
+    int K = 30;
 
     void initialize();
     std::vector<Particle*> finalSamples;
@@ -54,25 +56,26 @@ public:
     virtual GLenum drawMode() const;
     virtual void create();
 
-    void fallWithGravity();
-    void resetParticlePositions();
+    void reset();
 };
 
 class Particle {
     public:
         Particle(glm::vec3 gLoc, glm::vec3 wPos, int gId)
             : gridLoc(gLoc), pos(wPos), id(gId),
-              mass(1.0f), vol(1.f), xp(glm::vec3(0.f)), vp(glm::vec3(0.f)), Bp(glm::vec3(1.f)),
+              mass(1.f), vol(1.f), vp(glm::vec3(0.f)), Bp(glm::vec3(0.f)),
               elasticity(glm::mat3(1.f)), plasticity(glm::mat3(1.f)),
-              stress(glm::mat3(1.f)) {}
+              stress(glm::mat3(1.f)), weight(0.0f), weightGrad(glm::vec3(0.0f)) {}
         Particle(Particle* s)
             : gridLoc(s->gridLoc), pos(s->pos), id(s->id),
-              mass(1.0f), vol(1.f), xp(glm::vec3(0.f)), vp(glm::vec3(0.f)), Bp(glm::vec3(1.f)),
+              mass(1.f), vol(1.f), vp(glm::vec3(0.f)), Bp(glm::vec3(0.f)),
               elasticity(glm::mat3(1.f)), plasticity(glm::mat3(1.f)),
-              stress(glm::mat3(1.f)) {}
+              stress(glm::mat3(1.f)), weight(0.0f), weightGrad(glm::vec3(0.0f)) {}
         ~Particle();
 
+        // position in world
         glm::vec3 pos;
+        // position on grid (grid used in both sampling and mpm)
         glm::vec3 gridLoc;
         int id;
 
@@ -81,8 +84,6 @@ class Particle {
         float mass;
         // volume (Vp)
         float vol;
-        // initial position
-        glm::vec3 xp;
         // initial velocity
         glm::vec3 vp;
         // affine matrix (type?)
@@ -91,14 +92,16 @@ class Particle {
         glm::mat3 elasticity;
         // plasticity (Fp)
         glm::mat3 plasticity;
-        // deformation gradient (F = FeFp)
-//        glm::mat3 deformation;
         // stress (piola-kirchoff or cauchy idk)
         glm::mat3 stress;
+        // weight (for grid stuff)
+        float weight;
+        // weight gradient (also for grid stuff)
+        glm::vec3 weightGrad;
 
-        void updateDeformationGradients();
-        void updateDeformationGrad(glm::mat3 newDG);
+        void update(glm::mat3 newDG);
 
+        // deformation gradient (F = FeFp)
         glm::mat3 deformationGrad() {
             return (elasticity * plasticity);
         }

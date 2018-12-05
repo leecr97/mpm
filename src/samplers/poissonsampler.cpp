@@ -1,9 +1,9 @@
 #include "poissonsampler.h"
 
-PoissonSampler::PoissonSampler(Mesh &mesh, Scene &scene, bool isThreeDim)
+PoissonSampler::PoissonSampler(Mesh &mesh, Scene &scene)
     : m(mesh), s(scene), bvh(nullptr), bounds(nullptr), finalSamples(0, nullptr),
-      origPositions(), threeDim(isThreeDim), gridDim(glm::vec3(0.0f)),
-      K(30), numPoints(0), samp(5, 5) {
+      origPositions(), gridDim(glm::vec3(0.0f)),
+      numPoints(0), samp(5, 5) {
 
     initialize();
     generateSamples();
@@ -11,12 +11,14 @@ PoissonSampler::PoissonSampler(Mesh &mesh, Scene &scene, bool isThreeDim)
 
 //set up background grid based on radius
 void PoissonSampler::initialize() {
-    int nDim = (threeDim) ? 3 : 2;
-
     cellSize = radius/sqrt(nDim);
 //    cellSize = radius/((nDim*nDim));
     bvh = new PoissonBVH(m);
     bounds = bvh->root->bbox;
+    std::cout << "bounds: (";
+    std::cout << bounds->min[0] << ", " << bounds->min[1] << ", " << bounds->min[2] << "), (";
+    std::cout << bounds->max[0] << ", " << bounds->max[1] << ", " << bounds->max[2] << ")" << std::endl;
+    std::cout << "cell size: " << cellSize << std::endl;
 
     Point3f maxP = bounds->max;
     Point3f minP = bounds->min;
@@ -24,6 +26,7 @@ void PoissonSampler::initialize() {
     this->gridDim = glm::vec3(glm::ceil((maxP[0] - minP[0])/cellSize),
                                glm::ceil((maxP[1] - minP[1])/cellSize),
                                glm::ceil((maxP[2] - minP[2])/cellSize) );
+    std::cout << "grid dim: (" << gridDim[0] << ", " << gridDim[1] << ", " << gridDim[2] << ")" << std::endl;
 }
 
 GLenum PoissonSampler::drawMode() const {
@@ -48,6 +51,11 @@ void PoissonSampler::create() {
 
     glm::vec3 color2 = glm::vec3(255.0f, 255.0f, 255.0f) / 255.0f;
     for (int i = 0; numPoints!=0 && i<numPoints; i++) {
+//        Particle* p = finalSamples[i];
+//        if (p->vp.y > 0) {
+//            color2[1] = 0.f;
+//            color2[2] = 0.f;
+//        }
         points_vert_col[i] = (color2);
         points_vert_nor[i] = glm::vec3(0, 0, 1);
         points_idx[i] = i;
@@ -78,25 +86,21 @@ void PoissonSampler::create() {
     bufCol.allocate(points_vert_col, numPoints * sizeof(glm::vec3));
 }
 
-void PoissonSampler::fallWithGravity() {
-    for (Particle* p : finalSamples) {
-        if (p->pos.y >= -2) {
-//            std::cout << "y: " << p->pos.y << std::endl;
-            p->pos.y = p->pos.y - 0.2f;
-            // force of gravity * dt
-//            -2.f * p->mp;
-            create();
-        }
-    }
-}
-
-void PoissonSampler::resetParticlePositions() {
+void PoissonSampler::reset() {
     if (finalSamples.size() != origPositions.size()) {
         std::cout << "something went wrong" << std::endl;
     }
     for (int i = 0; i < finalSamples.size(); i++) {
         Particle* p = finalSamples[i];
         p->pos = origPositions[i];
+        p->gridLoc = posToGridLoc(p->pos);
+        p->vp = glm::vec3(0.f);
+        p->Bp = glm::vec3(0.f);
+        p->elasticity = glm::mat3(1.f);
+        p->plasticity = glm::mat3(1.f);
+        p->stress = glm::mat3(1.f);
+        p->weight = 0.0f;
+        p->weightGrad = glm::vec3(0.0f);
     }
     create();
 }
@@ -125,7 +129,7 @@ void PoissonSampler::generateSamples(){
     Particle* start = new Particle(initial, m.transform.position(), 0);
 
     // insert into background grid and active list
-    backgroundGrid[initial[0]][initial[1]][(threeDim) ? initial[2] : 0] = start;
+    backgroundGrid[initial[0]][initial[1]][initial[2]] = start;
     activeSamples.push_back(start);
 
     // active list loop
@@ -225,7 +229,7 @@ glm::vec3 PoissonSampler::posToGridLoc(glm::vec3 p) {
 
     int x = (int)(glm::clamp(((p[0] - min[0])/radius), 0.0f, gridDim[0] - 1));
     int y = (int)(glm::clamp(((p[1] - min[1])/radius), 0.0f, gridDim[1] - 1));
-    int z = (threeDim) ? (int)(glm::clamp(((p[2] - min[2])/radius), 0.0f, gridDim[2] - 1)) : 0;
+    int z = (int)(glm::clamp(((p[2] - min[2])/radius), 0.0f, gridDim[2] - 1));
 
     return glm::vec3(x, y, z);
 }
@@ -235,7 +239,7 @@ bool PoissonSampler::validWithinBounds(glm::vec3 p) {
                 && p.x < bounds->max[0] && p.y < bounds->max[1] && p.z < bounds->max[2]);
 }
 
-void Particle::updateDeformationGrad(glm::mat3 newDG) {
+void Particle::update(glm::mat3 newDG) {
     // assume all new deformation was elastic
     glm::mat3 newElas = newDG * glm::inverse(plasticity);
 
@@ -302,7 +306,7 @@ void Particle::updateDeformationGrad(glm::mat3 newDG) {
     // todo - maybe ? add in an additional check here to see if the reverse of the decomposition
     // brings back the original inputted deformation gradient
 
-    // yogurt values?
+    // yogurt values? 0.2, 0.3
     float mu = 0.2f;
     float lambda = 0.3f;
 
@@ -313,8 +317,15 @@ void Particle::updateDeformationGrad(glm::mat3 newDG) {
     EigenMat3 R = eigen_U * eigen_V.transpose();
     float j_elastic = Fe.determinant();
     float j_plastic = Fp.determinant();
-    auto stress_corrotated = 2.0 * mu * (Fe - R) + lambda * (j_elastic - 1.0) * Fe.inverse().transpose();
-    auto stress_piola_kirchoff = 2.0 * mu * (Fe - R) + lambda * j_elastic * (j_elastic - 1.0) * Fe.inverse().transpose();
+    // which stress to use?
+    EigenMat3 stress_corrotated = 2.0 * mu * (Fe - R) + lambda * (j_elastic - 1.0) * j_elastic * Fe.inverse().transpose();
+    EigenMat3 stress_neo_hookean = mu * (Fe - Fe.inverse().transpose()) + lambda * log(j_elastic) * Fe.inverse().transpose();
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            stress[i][j] = stress_corrotated(i, j);
+        }
+    }
 
     // convert from eigen to glm (and clamp S)
     glm::mat3 realU; glm::mat3 realS; glm::mat3 realV;
