@@ -27,7 +27,7 @@ MyGL::MyGL(QWidget *parent)
     : GLWidget277(parent),
       gl_camera(),
       poissonSampler(nullptr), poissonMesh(nullptr),
-      particles(), pgrid(nullptr),
+      pgrid(nullptr),
       completeSFX(":/include/complete.wav"),
       simulate(false)
 
@@ -148,7 +148,6 @@ void MyGL::poissonSamples() {
     if (this->poissonMesh != nullptr) {
         poissonSampler = new PoissonSampler(*poissonMesh, scene);
         poissonSampler->create();
-        particles = poissonSampler->finalSamples;
         std::cout<<"numSamples:"<<poissonSampler->numPoints<<std::endl;
         pgrid = new ParticleGrid(poissonSampler);
     }

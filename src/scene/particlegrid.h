@@ -10,9 +10,13 @@ class ParticleGrid
 {
 public:
     // constructors
-    ParticleGrid(PoissonSampler* samp);
+    ParticleGrid(PoissonSampler* sampler);
+    ~ParticleGrid() { delete sampler;
+                      gridMasses.clear(); gridVelocities.clear();
+                      gridMomentums.clear(); gridForces.clear(); }
 
     // methods
+    void initialize();
     void MPM();
     void computeWeights();
     void p2gTransfer();
@@ -35,10 +39,7 @@ public:
     glm::vec3 gridDim;
     float cellSize;
     float dt = 1e-6;
-//    std::vector<float> gridMasses;
-//    std::vector<glm::vec3> gridVelocities;
-//    std::vector<glm::vec3> gridMomentums;
-//    std::vector<glm::vec3> gridForces;
+    Bounds3f gridBounds;
     std::vector<std::vector<std::vector<float>>> gridMasses;
     std::vector<std::vector<std::vector<glm::vec3>>> gridVelocities;
     std::vector<std::vector<std::vector<glm::vec3>>> gridMomentums;

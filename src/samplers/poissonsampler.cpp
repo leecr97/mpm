@@ -1,7 +1,7 @@
 #include "poissonsampler.h"
 
 PoissonSampler::PoissonSampler(Mesh &mesh, Scene &scene)
-    : m(mesh), s(scene), bvh(nullptr), bounds(nullptr), finalSamples(0, nullptr),
+    : m(mesh), s(scene), bvh(nullptr), bounds(nullptr), finalSamples(),
       origPositions(), gridDim(glm::vec3(0.0f)),
       numPoints(0), samp(5, 5) {
 
@@ -40,7 +40,8 @@ void PoissonSampler::create() {
     //  pos vec3s
     std::vector<glm::vec3> posVector;
 
-    for (Particle* p: finalSamples ){
+    for (int i = 0; i < finalSamples.size(); i++) {
+        Particle* p = &(finalSamples[i]);
         posVector.push_back(p->pos);
     }
 
@@ -91,7 +92,7 @@ void PoissonSampler::reset() {
         std::cout << "something went wrong" << std::endl;
     }
     for (int i = 0; i < finalSamples.size(); i++) {
-        Particle* p = finalSamples[i];
+        Particle* p = &(finalSamples[i]);
         p->pos = origPositions[i];
         p->gridLoc = posToGridLoc(p->pos);
         p->vp = glm::vec3(0.f);
@@ -121,7 +122,7 @@ void PoissonSampler::generateSamples(){
                   gridDim[2], nullptr)));
 
     // choose a random voxel of grid, make initial sample
-    int randX = rand() % static_cast<int>(gridDim[0]);  // rand() % gridDim[0]
+    int randX = rand() % static_cast<int>(gridDim[0]);
     int randY = rand() % static_cast<int>(gridDim[1]);
     int randZ = rand() % static_cast<int>(gridDim[2]);
 
@@ -135,7 +136,7 @@ void PoissonSampler::generateSamples(){
     // active list loop
     while(activeSamples.size() > 0) {
         // choose random point
-        int ra = rand() % activeSamples.size();
+        int ra = rand() % (activeSamples.size());
         Particle* xi = activeSamples[ra];
         bool foundNewPoint = false;
 
@@ -192,10 +193,12 @@ void PoissonSampler::generateSamples(){
 
         if (!foundNewPoint) {
             // if after k attempts no point is found, remove i from active list and add to final list
-            finSamples.push_back(new Particle(xi));
+//            finSamples.push_back(new Particle(xi));
+            finSamples.push_back(xi);
             numPoints += 1;
             activeSamples.erase(std::remove(activeSamples.begin(), activeSamples.end(), xi),
                                      activeSamples.end());
+//            delete xi;
 
         }
 
@@ -203,10 +206,12 @@ void PoissonSampler::generateSamples(){
 
     for (Particle* s : finSamples) {
 //        if (validWithinObj(s->pos)) {
-            finalSamples.push_back(s);
+            finalSamples.push_back(Particle(s));
             origPositions.push_back(s->pos);
 //        }
+            delete s;
     }
+//    finSamples.clear();
     std::cout << "done generating samples!" << std::endl;
 }
 
@@ -350,8 +355,10 @@ void Particle::update(glm::mat3 newDG) {
         }
     }
 
+    // find plasticity from elasticity and newDG
     elasticity = realU * realS * realV;
-
-    // find plasticity from this elasticity and newDG
     plasticity = glm::inverse(elasticity) * newDG;
+
+    // hyperelasticity - only elasticity
+//    elasticity = newElas;
 }

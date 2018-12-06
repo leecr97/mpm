@@ -55,7 +55,6 @@ private:
 
     PoissonSampler* poissonSampler;
     Mesh* poissonMesh;
-    std::vector<Particle*> particles;
     ParticleGrid* pgrid;
 
 public:

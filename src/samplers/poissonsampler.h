@@ -20,7 +20,7 @@ class PoissonSampler : public Drawable
 public:
     //assuming only inputting primitives in scene that ALL need to be filled
     PoissonSampler(Mesh& mesh, Scene& scene);
-    ~PoissonSampler() { finalSamples.clear(); delete bvh; delete bounds;}
+    ~PoissonSampler() { finalSamples.clear(); origPositions.clear(); delete bvh; delete bounds;}
 
     // all variables below are initialized in the constructor's list
     Mesh m;
@@ -43,7 +43,7 @@ public:
     int K = 30;
 
     void initialize();
-    std::vector<Particle*> finalSamples;
+    std::vector<Particle> finalSamples;
     std::vector<glm::vec3> origPositions;
     Sampler samp;
     int numPoints;
@@ -71,7 +71,7 @@ class Particle {
               mass(1.f), vol(1.f), vp(glm::vec3(0.f)), Bp(glm::vec3(0.f)),
               elasticity(glm::mat3(1.f)), plasticity(glm::mat3(1.f)),
               stress(glm::mat3(1.f)), weight(0.0f), weightGrad(glm::vec3(0.0f)) {}
-        ~Particle();
+        ~Particle() {}
 
         // position in world
         glm::vec3 pos;
