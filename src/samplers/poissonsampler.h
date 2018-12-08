@@ -63,19 +63,19 @@ class Particle {
     public:
         Particle(glm::vec3 gLoc, glm::vec3 wPos, int gId)
             : gridLoc(gLoc), pos(wPos), id(gId),
-              mass(1.f), vol(1.f), vp(glm::vec3(0.f)), Bp(glm::vec3(0.f)),
+              mass(0.7f), vol(1.3f), vp(glm::vec3(0.f)), Bp(glm::mat3(0.f)),
               elasticity(glm::mat3(1.f)), plasticity(glm::mat3(1.f)),
               stress(glm::mat3(1.f)), weight(0.0f), weightGrad(glm::vec3(0.0f)) {}
         Particle(Particle* s)
             : gridLoc(s->gridLoc), pos(s->pos), id(s->id),
-              mass(1.f), vol(1.f), vp(glm::vec3(0.f)), Bp(glm::vec3(0.f)),
+              mass(0.7f), vol(1.3f), vp(glm::vec3(0.f)), Bp(glm::mat3(0.f)),
               elasticity(glm::mat3(1.f)), plasticity(glm::mat3(1.f)),
               stress(glm::mat3(1.f)), weight(0.0f), weightGrad(glm::vec3(0.0f)) {}
         ~Particle() {}
 
         // position in world
         glm::vec3 pos;
-        // position on grid (grid used in both sampling and mpm)
+        // position on grid (the sampling one, not the mpm one)
         glm::vec3 gridLoc;
         int id;
 
@@ -87,7 +87,7 @@ class Particle {
         // initial velocity
         glm::vec3 vp;
         // affine matrix (type?)
-        glm::vec3 Bp;
+        glm::mat3 Bp;
         // elasticity (Fe)
         glm::mat3 elasticity;
         // plasticity (Fp)

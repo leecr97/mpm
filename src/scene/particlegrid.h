@@ -44,7 +44,4 @@ public:
     std::vector<std::vector<std::vector<glm::vec3>>> gridVelocities;
     std::vector<std::vector<std::vector<glm::vec3>>> gridMomentums;
     std::vector<std::vector<std::vector<glm::vec3>>> gridForces;
-
-    // need to do: initialize a bunch of things..
-    // i think the math and stuff is right but idk what values to start this shit
 };

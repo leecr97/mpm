@@ -96,7 +96,7 @@ void PoissonSampler::reset() {
         p->pos = origPositions[i];
         p->gridLoc = posToGridLoc(p->pos);
         p->vp = glm::vec3(0.f);
-        p->Bp = glm::vec3(0.f);
+        p->Bp = glm::mat3(0.f);
         p->elasticity = glm::mat3(1.f);
         p->plasticity = glm::mat3(1.f);
         p->stress = glm::mat3(1.f);
@@ -318,11 +318,18 @@ void Particle::update(glm::mat3 newDG) {
     EigenMat3 Fe = eigen_newElas;
     EigenMat3 Fp = eigen_newPlas;
 
+//    std::cout << "Fe: " << std::endl;
+//    std::cout << Fe(0, 0) << " " << Fe(1, 0) << " " << Fe(2, 0) << " " << std::endl
+//              << Fe(0, 1) << " " << Fe(1, 1) << " " << Fe(2, 1) << " " << std::endl
+//              << Fe(0, 2) << " " << Fe(1, 2) << " " << Fe(2, 2) << " " << std::endl;
+
     // calculate stress
     EigenMat3 R = eigen_U * eigen_V.transpose();
     float j_elastic = Fe.determinant();
     float j_plastic = Fp.determinant();
-    // which stress to use?
+
+//    std::cout << j_elastic << " ";
+    // different types of stress
     EigenMat3 stress_corrotated = 2.0 * mu * (Fe - R) + lambda * (j_elastic - 1.0) * j_elastic * Fe.inverse().transpose();
     EigenMat3 stress_neo_hookean = mu * (Fe - Fe.inverse().transpose()) + lambda * log(j_elastic) * Fe.inverse().transpose();
 

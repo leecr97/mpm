@@ -73,17 +73,17 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
-           <widget class="QCheckBox" name="gravity">
-            <property name="text">
-             <string>Simulate</string>
-            </property>
-           </widget>
-          </item>
           <item row="4" column="0">
            <widget class="QPushButton" name="button_reset">
             <property name="text">
              <string>Reset Positions</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QPushButton" name="button_simulate">
+            <property name="text">
+             <string>Simulate</string>
             </property>
            </widget>
           </item>
@@ -148,8 +148,8 @@
     <slot>slot_SetProgressiveRender(bool)</slot>
     <slot>slot_SetIntegratorType(int)</slot>
     <slot>slot_loadPoissonObj()</slot>
-    <slot>slot_gravityActivated(bool)</slot>
     <slot>slot_reset()</slot>
+    <slot>slot_simulate()</slot>
    </slots>
   </customwidget>
  </customwidgets>
@@ -220,18 +220,18 @@
    </hints>
   </connection>
   <connection>
-   <sender>gravity</sender>
-   <signal>clicked(bool)</signal>
+   <sender>button_simulate</sender>
+   <signal>clicked()</signal>
    <receiver>mygl</receiver>
-   <slot>slot_gravityActivated(bool)</slot>
+   <slot>slot_simulate()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>366</x>
-     <y>500</y>
+     <x>481</x>
+     <y>508</y>
     </hint>
     <hint type="destinationlabel">
-     <x>365</x>
-     <y>452</y>
+     <x>321</x>
+     <y>250</y>
     </hint>
    </hints>
   </connection>
